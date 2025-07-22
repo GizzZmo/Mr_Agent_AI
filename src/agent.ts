@@ -7,7 +7,7 @@ export class Agent {
   tools: ITool[];
   memory: Memory;
 
-  constructor(name: string, purpose:string, tools: ITool[], memory: Memory) {
+  constructor(name: string, purpose: string, tools: ITool[], memory: Memory) {
     this.name = name;
     this.purpose = purpose;
     this.tools = tools;
@@ -21,7 +21,6 @@ export class Agent {
     const parsedData = {
       type: 'text_input',
       content: input,
-      keywords: input.toLowerCase().split(' ').filter(word => word.length > 2)
     };
     this.memory.addShortTerm(`Perceived: ${input}`);
     return {
@@ -33,10 +32,7 @@ export class Agent {
   async reasonAndPlan(perception: IPerceptionResult): Promise<IAction | null> {
     console.log(`\n--- Agent '${this.name}' Reasoning & Planning ---`);
     const lowerCaseInput = perception.rawInput.toLowerCase();
-    this.memory.retrieve(perception.rawInput); // Simulate memory retrieval for context
-
-    // --- Mock LLM Decision Logic ---
-    // This logic is made more robust to prevent crashing on unexpected input.
+    this.memory.retrieve(perception.rawInput);
     let action: IAction | null = null;
     
     if (lowerCaseInput.includes('search for')) {
@@ -46,7 +42,7 @@ export class Agent {
         this.memory.addShortTerm(`Planned to search web for: ${query}`);
       }
     } else if (lowerCaseInput.includes('summarize')) {
-      const textToSummarize = lowerCaseInput.split('summarize')[1]?.trim();
+      const textToSummarize = perception.rawInput.split(/summarize/i)[1]?.trim();
       if (textToSummarize) {
         action = { toolName: 'summarizeText', toolArguments: { text: textToSummarize } };
         this.memory.addShortTerm(`Planned to summarize text.`);
@@ -54,7 +50,7 @@ export class Agent {
     } else if (lowerCaseInput.includes('send email to')) {
       const content = lowerCaseInput.split('send email to')[1] || '';
       const [recipientPart, subjectPart] = content.split(' about ');
-      const [subject, body] = subjectPart ? subjectPart.split(' saying ') : [undefined, undefined];
+      const [subject, body] = subjectPart ? subjectPart.split(' saying ') : [];
 
       if (recipientPart?.trim() && subject?.trim() && body?.trim()) {
         const recipient = recipientPart.trim();
@@ -79,7 +75,6 @@ export class Agent {
   async act(action: IAction | null): Promise<string> {
     console.log(`\n--- Agent '${this.name}' Action ---`);
     
-    // Simplified logic for when no tool is chosen.
     if (!action) {
       const directResponse = "I have received your message. How can I assist you further?";
       console.log(`Direct Response: ${directResponse}`);
@@ -95,11 +90,8 @@ export class Agent {
     }
 
     try {
-      // **CRITICAL FIX**: Map arguments by name, not by object value order.
-      // Assumes tool.parameters is an array of argument names like ['recipient', 'subject', 'body']
       const orderedArgs = tool.parameters.map(paramName => action.toolArguments[paramName]);
 
-      // Verify that all required arguments were found
       if (orderedArgs.some(arg => arg === undefined)) {
         const errorMsg = `Error: Missing one or more arguments for tool '${tool.name}'.`;
         console.error(errorMsg, 'Required:', tool.parameters, 'Received:', action.toolArguments);
@@ -118,16 +110,11 @@ export class Agent {
       return errorMsg;
     }
   }
-
-  communicate(message: string): void {
-    console.log(`\n--- Agent '${this.name}' Communication ---`);
-    console.log(`Output: "${message}"`);
-  }
-
-  learn(feedback: string): void {
-    console.log(`\n--- Agent '${this.name}' Learning & Adaptation ---`);
-    console.log(`Received feedback: "${feedback}"`);
-    this.memory.addLongTerm(`Learned from feedback: ${feedback}`);
-    console.log("Agent adapted based on feedback.");
+  
+  async process(input: string): Promise<string> {
+      const perception = await this.perceive(input);
+      const action = await this.reasonAndPlan(perception);
+      const result = await this.act(action);
+      return result;
   }
 }
