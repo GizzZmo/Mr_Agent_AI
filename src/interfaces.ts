@@ -1,6 +1,6 @@
 export interface IPerceptionResult {
   rawInput: string;
-  parsedData: any; // Could be a structured representation of the input
+  parsedData: any;
 }
 
 export interface IAction {
