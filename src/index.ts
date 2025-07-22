@@ -1,52 +1,44 @@
+import express from 'express';
+import path from 'path';
 import { Agent } from './agent';
 import { Memory } from './memory';
 import { tools } from './tools';
 
-async function main() {
-  console.log("\n--- Agentic AI Application Simulation ---");
+const app = express();
+const port = 3000;
 
-  // Step 1: Define the Purpose
-  const agentPurpose = "To assist users by providing information, summarizing content, and performing actions via available tools.";
+// Initialize the Agent
+const agentPurpose = "To assist users by providing information, summarizing content, and performing actions via available tools.";
+const agentMemory = new Memory();
+const myAgent = new Agent("InquisitorBot", agentPurpose, tools, agentMemory);
 
-  // Step 2 & 3: Instantiate Memory and the Agent
-  const agentMemory = new Memory();
-  const myAgent = new Agent("InquisitorBot", agentPurpose, tools, agentMemory);
+// Middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
-  console.log("\nAgent initialized. Simulating interaction steps...");
-
-  // Simulate a sequence of interactions
-  const interactions = [
-    "Hello, what can you do?",
-    "Search for Agentic AI benefits.",
-    "Can you summarize this text for me: Agentic AI allows for autonomous decision-making, goal-driven actions, and adaptive learning, making systems more intelligent and proactive.",
-    "Send email to info@example.com about project update saying The project is progressing well, expecting completion next week.",
-    "Tell me more about yourself.",
-    "What are the challenges of Agentic AI?"
-  ];
-
-  for (let i = 0; i < interactions.length; i++) {
-    const input = interactions[i];
-    console.log(`\n--- User Input ${i + 1} ---`);
-    console.log(`User says: "${input}"`);
-
-    // The core agent loop: Perceive -> Reason & Plan -> Act
-    const perception = await myAgent.perceive(input);
-    const action = await myAgent.reasonAndPlan(perception);
-    const result = await myAgent.act(action);
-    myAgent.communicate(result);
-
-    // Simulate learning from feedback on specific interactions
-    if (i === 2) {
-      myAgent.learn("Successfully summarized text and provided accurate output.");
-    } else if (i === 4) {
-      myAgent.learn("Need to improve direct responses about self-description.");
+// API Endpoint to interact with the agent
+app.post('/api/chat', async (req, res) => {
+    const { prompt } = req.body;
+    if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
     }
-  }
 
-  // **FIXED LINE**
-  console.log("\n--- Simulation Complete ---");
-  
-  console.log("Final Long-term Memory:", agentMemory.retrieve('agent purpose').longTerm);
-}
+    try {
+        const result = await myAgent.process(prompt);
+        res.json({ response: result });
+    } catch (error) {
+        console.error("Error processing agent request:", error);
+        res.status(500).json({ error: 'Failed to process request' });
+    }
+});
 
-main().catch(console.error);
+// Serve the frontend
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
+
+app.listen(port, () => {
+    console.log(`\n--- Agentic AI Server ---`);
+    console.log(`Agent "${myAgent.name}" is ready.`);
+    console.log(`Server listening at http://localhost:${port}`);
+});
