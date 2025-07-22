@@ -1,1 +1,30 @@
-{  "name": "agentic-ai-app",  "version": "1.0.0",  "description": "A conceptual project demonstrating Agentic AI principles.",  "main": "dist/index.js",  "scripts": {    "start": "ts-node src/index.ts",    "build:frontend": "webpack --config webpack.config.js",    "build:backend": "tsc",    "build": "npm run build:backend && npm run build:frontend",    "dev": "ts-node-dev --respawn --transpile-only src/index.ts"  },  "keywords": ["agentic-ai", "ai", "autonomous-agents", "llm"],  "author": "AI Project Generator",  "license": "MIT",  "devDependencies": {    "ts-loader": "^9.5.1",    "ts-node": "^10.9.2",    "ts-node-dev": "^2.0.0",    "typescript": "^5.3.3",    "webpack": "^5.90.0",    "webpack-cli": "^5.1.4"  }}
+{
+  "name": "mr_agent_ai",
+  "version": "1.0.0",
+  "description": "A conceptual project to demonstrate the principles of Agentic AI.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build:server": "tsc -p tsconfig.json",
+    "build:client": "esbuild public/client.ts --bundle --outfile=public/client.js --platform=browser",
+    "build": "npm run build:server && npm run build:client",
+    "start": "node dist/index.js",
+    "dev": "npm run build && concurrently \"npm:start\" \"npx esbuild public/client.ts --bundle --outfile=public/client.js --watch\""
+  },
+  "keywords": [
+    "ai",
+    "agentic",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.21.5",
+    "typescript": "^5.4.5"
+  }
+}
